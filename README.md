@@ -11,6 +11,5 @@ Download the school report data by running:
 mkdir schools
 aws s3 sync s3://qz-aistudio-jbfm-scratch/schools schools
 ```
-
 ## Running the Code
 Run `python scraper.py` to get started.
