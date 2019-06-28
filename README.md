@@ -6,5 +6,10 @@ Tika, the dependency that converts PDF files into text, requires Java to run. Yo
 
 To install all Python related dependencies, run `pip install -r requirements.txt`.
 
+Download the school report data by running:
+```
+mkdir schools
+aws s3 sync s3://qz-aistudio-jbfm-scratch/schools schools
+```
 ## Running the Code
 Run `python scraper.py` to get started.

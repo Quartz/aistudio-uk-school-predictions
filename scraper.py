@@ -57,9 +57,11 @@ def get_next_page(soup):
         return next_page[0]['href']
 
 def main():
-    open = "/search"
-    closed = "/search?q=&location=&radius=&radius=3&latest_report_date_start=&latest_report_date_end=&status%5B%5D=2"
-    urls = [open, closed]
+    open = "/search?q=&location=&radius=3&status%5B0%5D=1&start=42500&rows=10"
+    # closed = "/search?q=&location=&radius=&radius=3&latest_report_date_start=&latest_report_date_end=&status%5B%5D=2"
+    # urls = [open, closed]
+    closed = "/search?q=&location=&radius=3&status%5B0%5D=2&start=52000&rows=10"
+    urls = [open]
     base = "https://reports.ofsted.gov.uk"
     if not os.path.exists("schools"):
         try:
@@ -73,7 +75,7 @@ def main():
             print ("You can avoid this error by creating a schools directory in the root of this project with subdirectories schools/open and schools/closed")
         finally:
             os.umask(original_umask)
-    count = 0
+    count = 1
     for url in urls:
         next = True
         while next:
