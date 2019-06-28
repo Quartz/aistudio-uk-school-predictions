@@ -1,0 +1,7 @@
+Pipfile
+Pipfile.lock
+/schools
+.DS_Store
+s3_bucket_counts.py
+open_schools.csv
+closed_schools.csv
