@@ -1,5 +1,0 @@
-Pipfile
-Pipfile.lock
-/schools
-.DS_Store
-s3_bucket_counts.py
