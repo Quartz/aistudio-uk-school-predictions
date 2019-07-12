@@ -26,36 +26,30 @@ def get_school_data(base,school_page,status,csv_writer):
     activity_page = requests.get(base+school_page)
     soup = BeautifulSoup(activity_page.text, 'html.parser')
     school_name_selector = soup.select("h1", class_="heading--title")
-    row = []
     if school_name_selector:
         school_name = school_name_selector[0].text
-        row.append(school_name)
     else:
         print ("Error: school name not found. Skipping school: {}".format(school_page))
         return
 
     status = check_status(base,school_page)
     if status != 200:
-        with open("retry_addresses.txt", "a") as txt_file:
+        with open("retry_school_dates.txt", "a") as txt_file:
             my_url = base+school_page
             txt_file.write(my_url)
             txt_file.close()
             print ("Error: request returned {} status".format(status))
         return
 
-    address = soup.select("address")
-    if address:
-        address = address[0].text
-    else:
-        print ("address not found")
-        address = ""
-    row.append(address)
-    # info = soup.select("ul", class_="info-block__items list-unstyled")[0].select("span")
-    # info_strings = [remove_tags(str(i)) for i in info if i]
-    # if info_strings:
-    #     info_strings[1::2] # Type, religious character, local authority, region, telephone
-    #     row.extend(info_strings)
-    csv_writer.writerow(row)
+    row = [school_name]
+    dates = soup.find_all('time')
+    pdf_links = soup.find_all("a", class_="publication-link")
+    for i in range(len(pdf_links)):
+        report_name = pdf_links[i]['href'].split('/')[-1]
+        date = dates[i].text
+        row.extend([report_name,date])
+        csv_writer.writerow(row)
+        row = [school_name]
 
 def get_next_page(soup):
     next_page = [tag for tag in soup.find_all('a') if tag.get("class") == "pagination__next"]
@@ -66,12 +60,12 @@ def get_next_page(soup):
 def main():
     open_path = "/search?q=&location=&radius=3&status%5B0%5D=1&start=42500&rows=10"
     closed = "/search?q=&location=&radius=3&status%5B0%5D=2&start=52000&rows=10"
-    urls = [open_path,closed]
-    count = 0
+    urls = [open_path]
     base = "https://reports.ofsted.gov.uk"
-    with open("school_addresses.csv", "w") as f:
+    count = 0
+    with open("school_dates.csv", "w") as f:
         csv_writer = csv.writer(f, delimiter=',')
-        csv_writer.writerow(['school','address'])
+        csv_writer.writerow(['school','report','date'])
         for url in urls:
             next = True
             while next:
@@ -86,7 +80,7 @@ def main():
                 schools = get_schools(soup)
                 for school in schools:
                     get_school_data(base,school,status,csv_writer)
-                    time.sleep(0.2)
+                    time.sleep(0.2) # Sleep for 200 ms
                 next_page = get_next_page(soup)
                 if next_page:
                     url = next_page
