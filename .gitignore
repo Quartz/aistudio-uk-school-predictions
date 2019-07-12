@@ -5,3 +5,7 @@ Pipfile.lock
 s3_bucket_counts.py
 open_schools.csv
 closed_schools.csv
+open_school_dates.csv
+closed_school_dates.csv
+schools.zip
+school_addresses.csv
