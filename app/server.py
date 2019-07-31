@@ -4,13 +4,13 @@ import uvicorn
 import random
 from fastai import *
 from fastai.text import *
-from tika import parser
+from io import BytesIO
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.staticfiles import StaticFiles
 
-export_file_url = 'https://qz-aistudio-jbfm-scratch.s3.amazonaws.com/export.pkl'
+export_file_url = 'https://qz-aistudio-jbfm-scratch.s3.amazonaws.com/fastai.pkl'
 export_file_name = 'export.pkl'
 
 # TODO: Maybe pull most recent reports from Ofsted
@@ -34,12 +34,13 @@ async def setup_learner(): # Load learner for predictions
     await download_file(export_file_url, path / export_file_name)
     try:
         learn = load_learner(path, export_file_name) # Replace path with path of file
+        learn.model = learn.model.module # must reference module since the learner was wrapped in nn.DataParallel
         return learn
     except RuntimeError as e:
-        if len(e.args) > 0 and 'CPU-only machine' in e.args[0]
-        print (e)
-        message = "\n\nThis model was trained with an old version of fastai and will not work in a CPU environment.\n\nPlease update the fastai library in your training environment and export your model again.\n\nSee instructions for 'Returning to work' at https://course.fast.ai."
-        raise RuntimeError(message)
+        if len(e.args) > 0 and 'CPU-only machine' in e.args[0]:
+            print (e)
+            message = "\n\nThis model was trained with an old version of fastai and will not work in a CPU environment.\n\nPlease update the fastai library in your training environment and export your model again.\n\nSee instructions for 'Returning to work' at https://course.fast.ai."
+            raise RuntimeError(message)
     else:
         raise
 
@@ -56,16 +57,15 @@ async def homepage(request):
 @app.route('/analyze', methods=['POST'])
 async def predict(request):
     pdf_data = await request.form()
-    # pdf_bytes = await(pdf_data['file'].read())
-    pdf_file = await pdf_data['file']
-    try:
-        raw = parser.from_file(pdf_file)
-        txt = raw['content']
-        prediction = learn.predict(txt)[0]
-        return JSONResponse({'result': str(prediction)})
-    except:
-        print ("Tika could not parse file")
-        raise
+    pdf_bytes = await(pdf_data['file'].read())
+    pdf = BytesIO(pdf_bytes)
+    prediction = learn.predict(pdf)
+    tensor_label = prediction[1].item()
+    if tensor_label == 0:
+        prob = prediction[2][0].item()
+    else:
+        prob = prediction[2][1].item()
+    return JSONResponse({'result': str(prediction[0]), 'probability': str(prob)})
 
 if __name__ == '__main__':
     if 'serve' in sys.argv: uvicorn.run(app=app, host='0.0.0.0', port=5042, log_level="info")
