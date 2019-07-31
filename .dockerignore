@@ -1,0 +1,9 @@
+*.pth
+.gitignore
+Dockerfile
+README.md
+*/.ipynb_checkpoints*
+*/data*
+*/example-reports*
+*/nbs*
+*/scraper*
