@@ -10,6 +10,15 @@
     <div class='title'>Predict School Closures in the UK 🏫</div>
     <p>
       Upload an inspection report from <a href="https://reports.ofsted.gov.uk/" target="blank">Ofsted</a>.
+      The app will predict whether or not the school is in danger of closing by
+      determining the possibility that the report will be <b>the last published
+      report before the school closes.</b> The probability that appears represents
+      how confident the classifier is in its decision. You can also view the words that
+      help the classifier make its prediction highlighted in purple below. The darker
+      the highlight, the more significant the word is to our machine learning model.
+      This app is powered by <a href="https://www.fast.ai/" target="blank">fast.ai</a>
+      and was built by the <a href="https://qz.ai/" target="blank">Quartz AI Studio</a> in collaboration with the BBC.
+      For more information, you can view <a href="https://github.com/Quartz/aistudio-uk-school-predictions" target="blank">the project's Github repository.</a>
     </p>
     <div class='content'>
       <div class='no-display'>
@@ -27,11 +36,13 @@
       <div class='analyze'>
         <button id='analyze-button' class='analyze-button' type='button' onclick='analyze()'>Analyze</button>
       </div>
+      <div class='wait-warning'>
+        <label id='wait-warning'></label>
+      </div>
       <div class='result-label'>
         <label id='result-label'></label>
       </div>
-      <div class='result-attention'>
-        <div id='result-attention'></div>
+      <div id='result-attention'>
       </div>
     </div>
   </div>

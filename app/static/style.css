@@ -16,6 +16,9 @@ body {
 
 .center > p {
   font-size: 16px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 75%;
 }
 
 .title {
@@ -26,11 +29,11 @@ body {
 }
 
 .content {
-    margin-top: 10em;
+    margin-top: 5vh;
 }
 
 .analyze {
-    margin-top: 5em;
+    margin-top: 3vh;
 }
 
 .upload-label {
@@ -39,7 +42,7 @@ body {
 }
 
 .result-label {
-    margin-top: 0.5em;
+    margin-top: 2vh;
     padding: 10px;
     font-size: 20px;
 }
@@ -66,5 +69,17 @@ button.analyze-button {
 
 button:focus {
     outline: 0;
-    cursor:pointer;
+}
+
+button {
+  cursor: pointer;
+}
+
+#result-attention {
+    overflow-y: scroll;
+    height: 40%;
+    width: 75%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 2vh;
 }
