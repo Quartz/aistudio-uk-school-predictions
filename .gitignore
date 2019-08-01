@@ -14,8 +14,8 @@ Pipfile.lock
 /app/models/fastai.pkl
 /nbs/__pycache__
 /nbs/models
+/nbs/data_lm.pkl
 /.ipynb_checkpoints
 last_reports.csv
 last-reports1-july29.pth
-/nbs/school_sample.csv
 /app/export.pkl

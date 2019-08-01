@@ -32,6 +32,7 @@ function analyze() {
       el("result-label").innerHTML = `Result = ${response["result"]} \n Probability = ${response["probability"]}`;
     }
     el("analyze-button").innerHTML = "Analyze";
+    el("result-attention").innerHTML = `${response["attention"]}`
   };
 
   var fileData = new FormData();

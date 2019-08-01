@@ -5,12 +5,15 @@ import random
 from fastai import *
 from fastai.text import *
 from io import BytesIO
+import matplotlib.cm as cm, mpld3
+from tika import parser
+# import matplotlib.pyplot as plt, mpld3
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.staticfiles import StaticFiles
 
-export_file_url = 'https://qz-aistudio-jbfm-scratch.s3.amazonaws.com/fastai.pkl'
+export_file_url = 'https://qz-aistudio-jbfm-scratch.s3.amazonaws.com/export.pkl'
 export_file_name = 'export.pkl'
 
 # TODO: Maybe pull most recent reports from Ofsted
@@ -33,8 +36,10 @@ async def download_file(url, dest): # Download the pickled model
 async def setup_learner(): # Load learner for predictions
     await download_file(export_file_url, path / export_file_name)
     try:
-        learn = load_learner(path, export_file_name) # Replace path with path of file
+        test = ItemList.from_csv(path='data/',csv_name='last_report_test_sample.csv')
+        learn = load_learner(path, export_file_name,test) # Replace path with path of file
         learn.model = learn.model.module # must reference module since the learner was wrapped in nn.DataParallel
+        preds = learn.get_preds(ds_type=DatasetType.Test)
         return learn
     except RuntimeError as e:
         if len(e.args) > 0 and 'CPU-only machine' in e.args[0]:
@@ -59,13 +64,17 @@ async def predict(request):
     pdf_data = await request.form()
     pdf_bytes = await(pdf_data['file'].read())
     pdf = BytesIO(pdf_bytes)
-    prediction = learn.predict(pdf)
+    text = parser.from_buffer(pdf)['content']
+    text = text.replace('\n',' ')
+    prediction = learn.predict(text)
     tensor_label = prediction[1].item()
     if tensor_label == 0:
         prob = prediction[2][0].item()
     else:
         prob = prediction[2][1].item()
-    return JSONResponse({'result': str(prediction[0]), 'probability': str(prob)})
+    txt_ci = TextClassificationInterpretation.from_learner(learn=learn,ds_type=DatasetType.Test)
+    attention = txt_ci.html_intrinsic_attention(text)
+    return JSONResponse({'result': str(prediction[0]), 'probability': str(prob), 'attention': attention})
 
 if __name__ == '__main__':
     if 'serve' in sys.argv: uvicorn.run(app=app, host='0.0.0.0', port=5042, log_level="info")
