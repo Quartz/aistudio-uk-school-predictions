@@ -60,7 +60,7 @@ def get_next_page(soup):
 def main():
     open_path = "/search?q=&location=&radius=3&status%5B0%5D=1&start=42500&rows=10"
     closed = "/search?q=&location=&radius=3&status%5B0%5D=2&start=52000&rows=10"
-    urls = [open_path]
+    urls = [open_path,closed]
     base = "https://reports.ofsted.gov.uk"
     count = 0
     with open("school_dates.csv", "w") as f:

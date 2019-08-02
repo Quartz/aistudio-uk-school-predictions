@@ -15,8 +15,6 @@ from starlette.staticfiles import StaticFiles
 export_file_url = 'https://qz-aistudio-jbfm-scratch.s3.amazonaws.com/export.pkl'
 export_file_name = 'export.pkl'
 
-# TODO: Maybe pull most recent reports from Ofsted
-
 classes = ['last', 'not_last']
 path = Path(__file__).parent
 

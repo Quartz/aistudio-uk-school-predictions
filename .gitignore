@@ -7,6 +7,7 @@ Pipfile.lock
 /data/school_addresses.csv
 /data/closed_school_dates.csv
 /data/open_school_dates.csv
+/data/last_reports.csv
 /__pycache__
 /app/models/count_vect.pkl
 /app/models/multi_nb.pkl
