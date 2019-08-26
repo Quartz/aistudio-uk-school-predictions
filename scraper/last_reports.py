@@ -46,6 +46,8 @@ for root in roots:
                             rest_names.append(s)
                             rest_status.append('closed')
                     else:
+                        if file == str(most_recent)+".txt": # don't include last open files - we don't know their actual status
+                            continue
                         rest_files.append(int(file.replace(".txt","")))
                         rest.append(content)
                         rest_names.append(s)
@@ -68,4 +70,4 @@ df_rest["status"] = rest_status
 df_rest["label"] = rest_labels
 
 df = df_last.append(df_rest, ignore_index=True)
-df.to_csv('data/last_reports.csv',index=False)
+df.to_csv('data/last_reports_v3.csv',index=False)

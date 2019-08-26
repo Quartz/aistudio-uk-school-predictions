@@ -20,3 +20,4 @@ Pipfile.lock
 last_reports.csv
 last-reports1-july29.pth
 /app/export.pkl
+.env

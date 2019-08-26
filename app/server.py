@@ -4,16 +4,19 @@ import uvicorn
 import random
 from fastai import *
 from fastai.text import *
-from io import BytesIO
+from io import BytesIO, StringIO
 import matplotlib.cm as cm
 from tika import parser
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.staticfiles import StaticFiles
+import os
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
-export_file_url = 'https://qz-aistudio-jbfm-scratch.s3.amazonaws.com/export.pkl'
-export_file_name = 'export.pkl'
+export_file_url = 'https://qz-aistudio-jbfm-scratch.s3.amazonaws.com/schools3.pkl'
+export_file_name = 'schools3.pkl'
 
 classes = ['last', 'not_last']
 path = Path(__file__).parent
@@ -59,10 +62,24 @@ async def homepage(request):
 @app.route('/analyze', methods=['POST'])
 async def predict(request):
     pdf_data = await request.form()
-    pdf_bytes = await(pdf_data['file'].read())
-    pdf = BytesIO(pdf_bytes)
+    if isinstance(pdf_data['file'],str):
+        pdf = pdf_data['file'] # Get the link
+        isLink= True
+        if pdf_data['to_email']:
+            sendEmail = True
+            emails = pdf_data['to_email']
+            from_email = pdf_data['from_email']
+        else:
+            sendEmail = False
+    else:
+        pdf_bytes = await(pdf_data['file'].read())
+        pdf = BytesIO(pdf_bytes)
+        isLink, sendEmail = False, False
     try:
-        text = parser.from_buffer(pdf)['content']
+        if isLink:
+            text = parser.from_file(pdf)['content'] # Pull down file from link
+        else:
+            text = parser.from_buffer(pdf)['content']
         text = text.replace('\n',' ')
         prediction = learn.predict(text)
         tensor_label = prediction[1].item()
@@ -70,16 +87,52 @@ async def predict(request):
             prob = prediction[2][0].item()
             res = "Result: " + str(prediction[0]) + " - this school may be in danger of closing"
         else:
-            prob = "Probability: " + str(prediction[2][1].item())
+            prob = prediction[2][1].item()
             res = "Result: " + str(prediction[0]) + " - this school is not in danger of closing"
         txt_ci = TextClassificationInterpretation.from_learner(learn=learn,ds_type=DatasetType.Test)
-        attention = txt_ci.html_intrinsic_attention(text,cmap=cm.Purples)
-    except:
+        # attention = txt_ci.html_intrinsic_attention(text,cmap=cm.Purples)
+        text, attn = txt_ci.intrinsic_attention(text)
+        text = text.text.split()
+        attn = to_np(attn)
+        tups = []
+        for i in range(len(text)):
+            tups.append((text[i],attn[i]))
+        tups = sorted(tups, key=lambda x: x[1], reverse=True)
+        i,j,top15words=0,0,[]
+        tokens = ['xxunk','xxpad','xxbos','xxfld','xxmaj','xxup','xxrep','xxwrep','ofsted','piccadilly'] # leave out tokens since we can't decode them
+        while i < 15 and j < len(tups):
+            if tups[j][0] not in tokens:
+                top15words.append(tups[j][0])
+                i+=1
+            j+=1
+        top15words_string = ""
+        for word in top15words:
+            top15words_string = top15words_string + word + "<br>"
+    except Exception as e:
         prob, attention = "",""
         res = "Sorry, we ran into an error! Please check the file type of the report you submitted. This app only supports .pdf and .txt files."
+        print (e)
         raise
     finally:
-        return JSONResponse({'result': res, 'probability': prob, 'attention': attention})
+        if sendEmail: # if sendEmail == True, send email with Twilio
+            if str(prediction[0]) == 'last':
+                message = Mail(
+                from_email=from_email,
+                to_emails=emails,
+                subject='Testing School Classifier',
+                html_content="Hey there! We ran into an interesting school report, and by our calculations, this could possibly be the school's final report before it closes. Here's the link to the report: " + pdf + "<br><br>And here are a few words that stood out to us: <br>" + top15words_string
+                )
+                try:
+                    sg = SendGridAPIClient(os.environ.get('apiKey'))
+                    response = sg.send(message)
+                    print (response.status_code)
+                    print (response.body)
+                    print (response.headers)
+                except Exception as e:
+                    print(str(e))
+            print ("Class: " + str(prediction[0]))
+            print ("Probability: " + str(prob))
+        return JSONResponse({'result': res, 'probability': prob, 'attention': top15words})
 
 if __name__ == '__main__':
     if 'serve' in sys.argv: uvicorn.run(app=app, host='0.0.0.0', port=5042, log_level="info")

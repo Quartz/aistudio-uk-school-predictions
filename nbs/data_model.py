@@ -3,6 +3,9 @@ from fastai.text import *
 from fastprogress import force_console_behavior
 master_bar, progress_bar = force_console_behavior()
 
+data_lm = TextLMDataBunch.from_csv('data/', 'train.csv', test='test.csv', text_cols='text', label_cols='label)
+data_lm.save('./', 'data_lm.pkl', bs=60)
+
 print ("loading data model...")
 data_lm = load_data('./', 'data_lm.pkl', bs=60)
 print (data_lm)
