@@ -42,7 +42,7 @@ async def download_file(url, dest): # Download the pickled model
 async def setup_learner(): # Load learner for predictions
     await download_file(export_file_url, path / export_file_name)
     try:
-        test = ItemList.from_csv(path='app/',csv_name='last_report_test_sample.csv')
+        test = ItemList.from_csv(path='app/',csv_name='final_sample.csv')
         learn = load_learner(path, export_file_name,test) # Replace path with path of file
         # learn.model = learn.model.module # must reference module since the learner was wrapped in nn.DataParallel
         preds = learn.get_preds(ds_type=DatasetType.Test)

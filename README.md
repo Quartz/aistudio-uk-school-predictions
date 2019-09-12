@@ -35,11 +35,11 @@ under the `/data` directory. Here's a high level overview of the machine learnin
 (dates and school names) in our corpus by combining [tabular](https://www.fast.ai/2018/04/29/categorical-embeddings/)
 and [text](https://course.fast.ai/videos/?lesson=4) neural nets.
 This approach was inspired by and used code from [this public repository](https://github.com/anhquan0412/fastai-tabular-text-demo).
-- `last-report.ipynb`: this approach used fast.ai's library for NLP problems.
+- `last-report-final.ipynb`: this approach used fast.ai's library for NLP problems.
 We took our corpus of reports to predict whether or not the report may be the final report
 before the school closes. The dataset for this notebook is different because it required a
 different target label. In the dataset, the final reports of closed schools were labeled `last`
-and all schools were labeled `not_last`. You can view this dataset in `app/last_report_test_sample.csv`.
+and all schools were labeled `not_last`. You can view this dataset in `app/final_sample.csv`.
 
 ## Render App
 To view the app locally, run `python app/server.py serve`.
