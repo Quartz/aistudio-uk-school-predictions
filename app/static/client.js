@@ -28,7 +28,7 @@ function analyze() {
     }
     el("analyze-button").innerHTML = "Analyze";
     el("wait-warning").innerHTML = "";
-    el("result-attention").innerHTML = `${response["attention"]}`
+    // el("result-attention").innerHTML = `${response["attention"]}`
   };
 
   var fileData = new FormData();
