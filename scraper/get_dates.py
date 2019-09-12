@@ -42,11 +42,12 @@ def get_school_data(base,school_page,status,csv_writer):
         return
 
     row = [school_name]
-    dates = soup.find_all('time')
+    dates = soup.find_all("p", class_="timeline__date")
+    dates = [remove_tags(str(date)) for date in dates]
     pdf_links = soup.find_all("a", class_="publication-link")
     for i in range(len(pdf_links)):
         report_name = pdf_links[i]['href'].split('/')[-1]
-        date = dates[i].text
+        date = dates[i]
         row.extend([report_name,date])
         csv_writer.writerow(row)
         row = [school_name]
@@ -58,12 +59,14 @@ def get_next_page(soup):
         return next_page[0]['href']
 
 def main():
-    open_path = "/search?q=&location=&radius=3&status%5B0%5D=1&start=42500&rows=10"
-    closed = "/search?q=&location=&radius=3&status%5B0%5D=2&start=52000&rows=10"
-    urls = [open_path]
+    open_path = "/search?q=&location=&lat=&lon=&radius=&level_1_types=0"
+    open_start = "/search?q=&location=&radius=3&status%5B0%5D=1&start=17000&rows=10"
+    closed = "/search?q=&location=&radius=&latest_report_date_start=&latest_report_date_end=&status%5B%5D=2"
+    closed_end = "/search?q=&location=&radius=3&status%5B0%5D=2&start=52000&rows=10"
+    urls = [open_start]
     base = "https://reports.ofsted.gov.uk"
     count = 0
-    with open("school_dates.csv", "w") as f:
+    with open("open_school_dates_cont.csv", "w") as f:
         csv_writer = csv.writer(f, delimiter=',')
         csv_writer.writerow(['school','report','date'])
         for url in urls:

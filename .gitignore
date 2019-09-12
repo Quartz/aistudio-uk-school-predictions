@@ -7,6 +7,7 @@ Pipfile.lock
 /data/school_addresses.csv
 /data/closed_school_dates.csv
 /data/open_school_dates.csv
+/data/last_reports.csv
 /__pycache__
 /app/models/count_vect.pkl
 /app/models/multi_nb.pkl
@@ -19,3 +20,15 @@ Pipfile.lock
 last_reports.csv
 last-reports1-july29.pth
 /app/export.pkl
+.env
+/app/fastai.pkl
+/app/final_no_preds_export.pkl
+/app/no_preds_export2.pkl
+app/schools3.pkl
+/data/closed_school_addresses copy.csv
+/data/closed_school_addresses.csv
+/data/data_academies.csv
+/data/data_no_predecessors.csv
+/data/open_school_addresses.csv
+/data/predecessors.csv
+send_email.py
