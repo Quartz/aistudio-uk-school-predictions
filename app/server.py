@@ -56,21 +56,29 @@ async def setup_learner(): # Load learner for predictions
     else:
         raise
 
-def create_csv():
+def create_csv(): # TODO: Test this function
     s3 = boto3.resource('s3')
     yesterday = datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d')
     csv_name = 'school-closures'+yesterday+'.csv'
     bucket = 'qz-aistudio-public'
     try:
-        object = s3.Object(bucket, csv_name).load()
+        object = s3.Object(bucket, csv_name).get_contents_to_filename(csv_name) # must download the file to write to it
     except botocore.exceptions.ClientError as e:
         if e.response['Error']['Code'] == "404": # the object does not exist
-            object = s3.Object(bucket, csv_name)
-            object.put(Body=b'school,report,confidence')
+            csv_file = open(csv_name, 'w') # create local file to write to
+            csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"',quoting=csv.QUOTE_MINIMAL)
+            csv_writer.writerow(['school','report','confidence'])
+            csv_file.close()
         else:
             raise
             return -1 # return an error code if something else went wrong
-    return object
+    return csv_name
+
+def upload_csv(csv_name): # Test this function
+    s3 = boto3.resource('s3')
+    bucket = 'qz-aistudio-public'
+    object = s3.Object(bucket, csv_name)
+    object.put(Body=open(csv_name,'rb'))
 
 loop = asyncio.get_event_loop()
 tasks = [asyncio.ensure_future(setup_learner())]
@@ -85,10 +93,11 @@ loop.close()
 @app.route('/analyze', methods=['POST'])
 async def predict(request):
     pdf_data = await request.form()
-    object = create_csv()
-    if object == -1:
+    csv_name = create_csv()
+    if csv_name == -1:
         print ("Error: could not access CSV")
         return JSONResponse({'error': "Error: could not access CSV"})
+
     if 'reports' in pdf_data:
         reports = pdf_data['reports'] # read in report link
         obj = json.loads(reports)
@@ -98,9 +107,7 @@ async def predict(request):
             from_email = pdf_data['from_email']
 
     try:
-        yesterday = datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d')
-        csv_name = 'school-closures'+yesterday+'.csv'
-        with open(csv_name,'w') as csv_file:
+        with open(csv_name,'a') as csv_file: # Write to CSV in S3 not local CSV
             csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"',quoting=csv.QUOTE_MINIMAL)
             csv_writer.writerow(['school','report','confidence'])
             # Rewrite to receive only one object, write to CSV in S3
@@ -130,9 +137,11 @@ async def predict(request):
         raise
         return JSONResponse({'result': res})
     finally:
+        upload_csv(csv_name) # Upload new CSV to S3
+
         if sendEmail == True: # if sendEmail == True, send email with Twilio
             content = "Hey there! We ran into some interesting school reports from Ofsted, and by our calculations, these could possibly be the final reports of these schools before they close. We've attached a CSV with a list of the school reports."
-
+            # TODO: Read file from S3
             with open(csv_name,'rb') as f: # open up the csv and attach it
                 data = f.read()
                 f.close()
