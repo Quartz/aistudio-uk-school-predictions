@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 import csv
 import base64
 import json
+import boto3
 
 export_file_url = 'https://qz-aistudio-jbfm-scratch.s3.amazonaws.com/final_no_preds_export.pkl'
 export_file_name = 'final_no_preds_export.pkl'
@@ -55,6 +56,22 @@ async def setup_learner(): # Load learner for predictions
     else:
         raise
 
+def create_csv():
+    s3 = boto3.resource('s3')
+    yesterday = datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d')
+    csv_name = 'school-closures'+yesterday+'.csv'
+    bucket = 'qz-aistudio-public'
+    try:
+        object = s3.Object(bucket, csv_name).load()
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == "404": # the object does not exist
+            object = s3.Object(bucket, csv_name)
+            object.put(Body=b'school,report,confidence')
+        else:
+            raise
+            return -1 # return an error code if something else went wrong
+    return object
+
 loop = asyncio.get_event_loop()
 tasks = [asyncio.ensure_future(setup_learner())]
 learn = loop.run_until_complete(asyncio.gather(*tasks))[0]
@@ -68,9 +85,13 @@ loop.close()
 @app.route('/analyze', methods=['POST'])
 async def predict(request):
     pdf_data = await request.form()
+    object = create_csv()
+    if object == -1:
+        print ("Error: could not access CSV")
+        return JSONResponse({'error': "Error: could not access CSV"})
     if 'reports' in pdf_data:
-        reports = pdf_data['reports'] # Get list of reports and school names
-        reports = json.loads(reports)
+        reports = pdf_data['reports'] # read in report link
+        obj = json.loads(reports)
         if 'to_email' in pdf_data:
             sendEmail = True
             to_email = pdf_data['to_email']
@@ -82,23 +103,24 @@ async def predict(request):
         with open(csv_name,'w') as csv_file:
             csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"',quoting=csv.QUOTE_MINIMAL)
             csv_writer.writerow(['school','report','confidence'])
-            for obj in reports:
-                school = obj['school']
-                file = obj['file']
-                text = parser.from_file(file)['content'] # Pull down file from link
-                text = text.replace('\n',' ')
-                prediction = learn.predict(text)
-                tensor_label = prediction[1].item()
-                if tensor_label == 0:
-                    prob = prediction[2][0].item()
-                    res = "Result: " + str(prediction[0]) + " - this school may be in danger of closing"
-                else:
-                    prob = prediction[2][1].item()
-                    res = "Result: " + str(prediction[0]) + " - this school is not in danger of closing"
-                if str(prediction[0]) == 'last':
-                    print([school, file, prob])
-                    csv_writer.writerow([school, file, prob])
-                    csv_file.flush()
+            # Rewrite to receive only one object, write to CSV in S3
+            # for obj in reports:
+            school = obj['school'] # read in school name and report pdf
+            file = obj['file']
+            text = parser.from_file(file)['content'] # Pull down file from link
+            text = text.replace('\n',' ')
+            prediction = learn.predict(text)
+            tensor_label = prediction[1].item()
+            if tensor_label == 0:
+                prob = prediction[2][0].item()
+                res = "Result: " + str(prediction[0]) + " - this school may be in danger of closing"
+            else:
+                prob = prediction[2][1].item()
+                res = "Result: " + str(prediction[0]) + " - this school is not in danger of closing"
+            if str(prediction[0]) == 'last':
+                print([school, file, prob])
+                csv_writer.writerow([school, file, prob])
+                csv_file.flush()
             csv_file.close()
 
     except Exception as e:
