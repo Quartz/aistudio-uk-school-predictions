@@ -3,7 +3,7 @@
 This repo contains 1) a scraper to pull reports from Ofsted's site, 2) Jupyter notebooks
 that contain exploratory analysis to predict whether or not a school may be in danger of closing,
 and 3) the code for an app where you can play with a live version of our classifier.
-This project was made by the [Quartz AI Studio](https://qz.ai/) in collaboration with the BBC.
+This project was made by the [Quartz AI Studio](https://qz.ai/) in collaboration with BBC data journalist Paul Bradshaw.
 
 ## Prequisites
 Tika, the dependency that converts PDF files into text, requires Java to run. You can download
